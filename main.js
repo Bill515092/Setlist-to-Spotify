@@ -21,10 +21,12 @@ const fetchPlaylist = () => {
       data.setlist[0].sets.set[0].song.map((song) => tracklist.push(song.name));
       //console.log(artistName, venueName, eventDate, tracklist);
 
-      artistObject.name = artistName;
-      artistObject.venue = venueName;
-      artistObject.date = eventDate;
-      artistObject.tracklist = tracklist;
+      artistObject = {
+        name: artistName,
+        venue: venueName,
+        date: eventDate,
+        tracklist: tracklist,
+      };
 
       return artistObject;
     })
