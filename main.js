@@ -10,7 +10,7 @@ const auth_code = process.env.SPOTIFY_AUTH_CODE;
 const authorize = "https://accounts.spotify.com/authorize?";
 const scopes = "playlist-modify-public playlist-modify-private";
 const redirect_uri = "https://www.google.co.uk";
-const user_id = "hardimehnt";
+const user_id = "bill19922";
 const authURL =
   "https://accounts.spotify.com/authorize?client_id=83b22c59449c47c0a7755d3427a6de25&response_type=code&redirect_uri=https://www.google.co.uk&show_dialog=true&scope=playlist-modify-public playlist-modify-private";
 
@@ -19,6 +19,13 @@ const newPlaylist = {
   name: "Test playlist",
   description: "A test playlist 1",
   public: true,
+};
+
+const newSearch = {
+  q: "remaster%20track:Doxy%20artist:Miles%20Davis",
+  type: "track",
+  market: "GB",
+  limit: 1,
 };
 
 const fetchPlaylist = () => {
@@ -128,10 +135,35 @@ const createPlaylist = async (playlist) => {
 
 // Create Playlist
 
-createPlaylist(newPlaylist)
-  .then((response) => {
-    console.log(response);
-  })
-  .catch((error) => {
-    console.log(error.response.data.error_description);
-  });
+// createPlaylist(newPlaylist)
+//   .then((response) => {
+//     console.log(response);
+//   })
+//   .catch((error) => {
+//     console.log(error.response.data.error_description);
+//   });
+
+// Track Search
+
+const trackSearch = async (tracks) => {
+  const access_token = await getAccessToken(auth_code);
+  console.log(access_token);
+  const api_url = "https://api.spotify.com/v1/search";
+
+  try {
+    const response = await axios.get(api_url, JSON.stringify(tracks), {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+        "Content-Type": "application/json",
+      },
+      data: newSearch,
+    });
+    return response;
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+trackSearch(newSearch).then((response) => {
+  console.log(response);
+});
