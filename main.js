@@ -21,12 +21,12 @@ const newPlaylist = {
   public: true,
 };
 
-const newSearch = {
-  q: "remaster%20track:Doxy%20artist:Miles%20Davis",
-  type: "track",
-  market: "GB",
-  limit: 1,
-};
+// const newSearch = {
+//   q: "remaster%20track:Doxy%20artist:Miles%20Davis",
+//   type: "track",
+//   market: "GB",
+//   limit: 1,
+// };
 
 const fetchPlaylist = () => {
   return fetch(`https://api.setlist.fm/rest/1.0/artist/${artistId}/setlists`, {
@@ -82,9 +82,33 @@ const authUser = () => {
 //   }
 // };
 
+const getClientAuthOptions = {
+  url: "https://accounts.spotify.com/api/token",
+  method: "post",
+  headers: {
+    Authorization:
+      "Basic " +
+      Buffer.from(client_id + ":" + client_secret).toString("base64"),
+  },
+  params: {
+    grant_type: "client_credentials",
+  },
+};
+
+axios(getClientAuthOptions)
+  .then((response) => {
+    if (response.status === 200) {
+      const token = response.data.access_token;
+      console.log("Client Credentials Token: ", token);
+    }
+  })
+  .catch((error) => {
+    console.error("Error:", error);
+  });
+
 // getAuthCode();
 
-const getAccessToken = async (authorizationCode) => {
+const getUserAuthOptions = async (authorizationCode) => {
   try {
     const tokenData = qs.stringify({
       grant_type: "authorization_code",
@@ -114,7 +138,7 @@ const getAccessToken = async (authorizationCode) => {
 };
 
 const createPlaylist = async (playlist) => {
-  const access_token = await getAccessToken(auth_code);
+  const access_token = await getUserAuthOptions(auth_code);
   console.log(access_token);
   const api_url = `https://api.spotify.com/v1/users/${user_id}/playlists`;
 
@@ -135,35 +159,35 @@ const createPlaylist = async (playlist) => {
 
 // Create Playlist
 
-// createPlaylist(newPlaylist)
-//   .then((response) => {
-//     console.log(response);
-//   })
-//   .catch((error) => {
-//     console.log(error.response.data.error_description);
-//   });
+createPlaylist(newPlaylist)
+  .then((response) => {
+    console.log(response);
+  })
+  .catch((error) => {
+    console.log(error.response.data.error_description);
+  });
 
 // Track Search
 
-const trackSearch = async (tracks) => {
-  const access_token = await getAccessToken(auth_code);
-  console.log(access_token);
-  const api_url = "https://api.spotify.com/v1/search";
+// const trackSearch = async (tracks) => {
+//   const access_token = await getAccessToken(auth_code);
+//   console.log(access_token);
+//   const api_url = "https://api.spotify.com/v1/search";
 
-  try {
-    const response = await axios.get(api_url, JSON.stringify(tracks), {
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/json",
-      },
-      data: newSearch,
-    });
-    return response;
-  } catch (error) {
-    console.log(error);
-  }
-};
+//   try {
+//     const response = await axios.get(api_url, JSON.stringify(tracks), {
+//       headers: {
+//         Authorization: `Bearer ${access_token}`,
+//         "Content-Type": "application/json",
+//       },
+//       data: newSearch,
+//     });
+//     return response;
+//   } catch (error) {
+//     console.log(error);
+//   }
+// };
 
-trackSearch(newSearch).then((response) => {
-  console.log(response);
-});
+// trackSearch(newSearch).then((response) => {
+//   console.log(response);
+// });
