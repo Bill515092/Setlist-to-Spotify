@@ -21,14 +21,16 @@ const newPlaylist = {
   public: true,
 };
 
-// const newSearch = {
-//   q: "remaster%20track:Doxy%20artist:Miles%20Davis",
-//   type: "track",
-//   market: "GB",
-//   limit: 1,
-// };
+let newSearch = {
+  q: "The Summoning",
+  type: "track",
+  market: "GB",
+  limit: 1,
+};
 
-const fetchPlaylist = () => {
+let uriArr = [];
+
+const fetchSetlist = () => {
   return fetch(`https://api.setlist.fm/rest/1.0/artist/${artistId}/setlists`, {
     headers: {
       "x-api-key": process.env.SETLIST_API_KEY,
@@ -52,12 +54,19 @@ const fetchPlaylist = () => {
         tracklist: tracklist,
       };
 
-      return artistObject;
+      newSearch = {
+        q: tracklist,
+        type: "track",
+        market: "GB",
+        limit: tracklist.length,
+      };
+
+      return { artistObject, newSearch };
     })
     .catch((error) => console.log(error));
 };
 
-fetchPlaylist().then((result) => console.log(result));
+fetchSetlist().then((result) => console.log());
 
 // Token Request
 
@@ -82,30 +91,34 @@ const authUser = () => {
 //   }
 // };
 
-const getClientAuthOptions = {
-  url: "https://accounts.spotify.com/api/token",
-  method: "post",
-  headers: {
-    Authorization:
-      "Basic " +
-      Buffer.from(client_id + ":" + client_secret).toString("base64"),
-  },
-  params: {
-    grant_type: "client_credentials",
-  },
+const getClientAuthOptions = async (clientCode) => {
+  try {
+    const tokenData = {
+      grant_type: "client_credentials",
+      code: encodeURIComponent(clientCode),
+      redirect_uri,
+    };
+
+    const authHeader = Buffer.from(`${client_id}:${client_secret}`).toString(
+      "base64"
+    );
+    const response = await axios.post(
+      "https://accounts.spotify.com/api/token",
+      qs.stringify(tokenData), // Add qs.stringify here if required
+      {
+        headers: {
+          Authorization: `Basic ${authHeader}`, // Add space after "Basic"
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    return response.data.access_token;
+  } catch (error) {
+    console.log("Error getting access token:", error.message);
+    throw error;
+  }
 };
-
-axios(getClientAuthOptions)
-  .then((response) => {
-    if (response.status === 200) {
-      const token = response.data.access_token;
-      console.log("Client Credentials Token: ", token);
-    }
-  })
-  .catch((error) => {
-    console.error("Error:", error);
-  });
-
 // getAuthCode();
 
 const getUserAuthOptions = async (authorizationCode) => {
@@ -137,57 +150,89 @@ const getUserAuthOptions = async (authorizationCode) => {
   }
 };
 
-const createPlaylist = async (playlist) => {
-  const access_token = await getUserAuthOptions(auth_code);
-  console.log(access_token);
-  const api_url = `https://api.spotify.com/v1/users/${user_id}/playlists`;
-
-  try {
-    const response = await axios.post(api_url, JSON.stringify(playlist), {
-      headers: {
-        Authorization: `Bearer ${access_token}`,
-        "Content-Type": "application/json",
-      },
-      data: newPlaylist,
-    });
-
-    return response.data;
-  } catch (error) {
-    console.log(error);
-  }
-};
-
-// Create Playlist
-
-createPlaylist(newPlaylist)
-  .then((response) => {
-    console.log(response);
-  })
-  .catch((error) => {
-    console.log(error.response.data.error_description);
-  });
-
-// Track Search
-
-// const trackSearch = async (tracks) => {
-//   const access_token = await getAccessToken(auth_code);
+// const createPlaylist = async (playlist) => {
+//   const access_token = await getUserAuthOptions(auth_code);
 //   console.log(access_token);
-//   const api_url = "https://api.spotify.com/v1/search";
+//   const api_url = `https://api.spotify.com/v1/users/${user_id}/playlists`;
 
 //   try {
-//     const response = await axios.get(api_url, JSON.stringify(tracks), {
+//     const response = await axios.post(api_url, JSON.stringify(playlist), {
 //       headers: {
 //         Authorization: `Bearer ${access_token}`,
 //         "Content-Type": "application/json",
 //       },
-//       data: newSearch,
+//       data: newPlaylist,
 //     });
-//     return response;
+
+//     return response.data;
 //   } catch (error) {
 //     console.log(error);
 //   }
 // };
 
+// Create Playlist
+
+// createPlaylist(newPlaylist)
+//   .then((response) => {
+//     console.log(response);
+//   })
+//   .catch((error) => {
+//     console.log(error.response.data.error_description);
+//   });
+
+// Track Search
+
+const trackSearch = async (trackName, type, market, limit) => {
+  const access_token = await getClientAuthOptions();
+  //console.log(access_token);
+  const api_url = "https://api.spotify.com/v1/search";
+
+  console.log(trackName, type, market, limit);
+  try {
+    const response = await axios.get(
+      api_url,
+      JSON.stringify(trackName, type, market, limit),
+      {
+        // params: {
+        //   q: trackName,
+        //   type: type,
+        //   market: market,
+        //   limit: limit,
+        // },
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response;
+  } catch (error) {
+    //console.log(error);
+  }
+};
+
 // trackSearch(newSearch).then((response) => {
-//   console.log(response);
+//   console.log(response.data.tracks.items[0].uri);
 // });
+
+const tracklistSearch = async (search) => {
+  try {
+    const response = await fetchSetlist();
+    console.log(response);
+    response.newSearch.q.map((track) => {
+      console.log(track);
+    });
+    //console.log(uri);
+  } catch (error) {
+    //console.log(error);
+  }
+};
+tracklistSearch(newSearch);
+trackSearch(
+  newSearch.q,
+  newSearch.type,
+  newSearch.market,
+  newSearch.limit
+).then((response) => {
+  console.log(response);
+});
