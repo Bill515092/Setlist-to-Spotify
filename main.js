@@ -10,7 +10,7 @@ const auth_code = process.env.SPOTIFY_AUTH_CODE;
 const authorize = "https://accounts.spotify.com/authorize?";
 const scopes = "playlist-modify-public playlist-modify-private";
 const redirect_uri = "https://www.google.co.uk";
-const user_id = "bill19922";
+const user_id = "hardimehnt";
 const authURL =
   "https://accounts.spotify.com/authorize?client_id=83b22c59449c47c0a7755d3427a6de25&response_type=code&redirect_uri=https://www.google.co.uk&show_dialog=true&scope=playlist-modify-public playlist-modify-private";
 
@@ -182,57 +182,57 @@ const getUserAuthOptions = async (authorizationCode) => {
 
 // Track Search
 
-const trackSearch = async (trackName, type, market, limit) => {
+const trackSearch = async (track) => {
   const access_token = await getClientAuthOptions();
   //console.log(access_token);
   const api_url = "https://api.spotify.com/v1/search";
 
-  console.log(trackName, type, market, limit);
+  const response = await axios.get(api_url, {
+    params: {
+      q: track.q,
+      type: track.type,
+      market: track.market,
+      limit: track.limit,
+    },
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  return response;
+};
+
+const tracklistSearch = async () => {
   try {
-    const response = await axios.get(
-      api_url,
-      JSON.stringify(trackName, type, market, limit),
-      {
-        // params: {
-        //   q: trackName,
-        //   type: type,
-        //   market: market,
-        //   limit: limit,
-        // },
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await fetchSetlist();
+
     return response;
   } catch (error) {
     //console.log(error);
   }
 };
 
-// trackSearch(newSearch).then((response) => {
-//   console.log(response.data.tracks.items[0].uri);
-// });
-
-const tracklistSearch = async (search) => {
+tracklistSearch(newSearch).then(async (response) => {
   try {
-    const response = await fetchSetlist();
-    console.log(response);
-    response.newSearch.q.map((track) => {
-      console.log(track);
-    });
-    //console.log(uri);
+    const uriArr = [];
+
+    await Promise.all(
+      response.newSearch.q.map(async (track) => {
+        const trackResponse = await trackSearch({
+          q: track,
+          type: "track",
+          market: "GB",
+          limit: response.newSearch.q.length,
+        });
+
+        uriArr.push(trackResponse.data.tracks.items[0].uri);
+      })
+    );
+
+    console.log(uriArr);
+    return uriArr;
   } catch (error) {
-    //console.log(error);
+    console.error("Error:", error);
   }
-};
-tracklistSearch(newSearch);
-trackSearch(
-  newSearch.q,
-  newSearch.type,
-  newSearch.market,
-  newSearch.limit
-).then((response) => {
-  console.log(response);
 });
