@@ -45,7 +45,6 @@ const fetchSetlist = () => {
       let tracklist = [];
 
       data.setlist[2].sets.set[0].song.map((song) => tracklist.push(song.name));
-      //console.log(artistName, venueName, eventDate, tracklist);
 
       artistObject = {
         name: artistName,
@@ -58,7 +57,7 @@ const fetchSetlist = () => {
         q: tracklist,
         type: "track",
         market: "GB",
-        limit: tracklist.length,
+        limit: 1,
       };
 
       return { artistObject, newSearch };
@@ -206,7 +205,7 @@ const trackSearch = async (track) => {
 const tracklistSearch = async () => {
   try {
     const response = await fetchSetlist();
-
+    console.log(response);
     return response;
   } catch (error) {
     //console.log(error);
@@ -215,21 +214,24 @@ const tracklistSearch = async () => {
 
 tracklistSearch(newSearch).then(async (response) => {
   try {
-    const uriArr = [];
+    let uriArr = [];
 
     await Promise.all(
       response.newSearch.q.map(async (track) => {
         const trackResponse = await trackSearch({
-          q: track,
+          q: `track${encodeURIComponent(track)}%20artist:${encodeURIComponent(
+            response.artistObject.name
+          )}`,
           type: "track",
           market: "GB",
-          limit: response.newSearch.q.length,
+          limit: 1,
         });
 
-        uriArr.push(trackResponse.data.tracks.items[0].uri);
+        trackResponse.data.tracks.items.map((song) => {
+          uriArr.push(song.uri);
+        });
       })
     );
-
     console.log(uriArr);
     return uriArr;
   } catch (error) {
